@@ -592,7 +592,7 @@ export function addWriteMethods(LMDBStore, { env, fixedBuffer, resetReadTxn, use
 	Object.assign(LMDBStore.prototype, {
 		put(key, value, versionOrOptions, ifVersion) {
 			let callback, flags = 15, type = typeof versionOrOptions;
-			if (type == 'object') {
+			if (type == 'object' && versionOrOptions) {
 				if (versionOrOptions.noOverwrite)
 					flags |= 0x10;
 				if (versionOrOptions.noDupData)
@@ -600,7 +600,7 @@ export function addWriteMethods(LMDBStore, { env, fixedBuffer, resetReadTxn, use
 				if (versionOrOptions.append)
 					flags |= 0x20000;
 				if (versionOrOptions.ifVersion != undefined)
-					ifVersion = versionsOrOptions.ifVersion;
+					ifVersion = versionOrOptions.ifVersion;
 				versionOrOptions = versionOrOptions.version;
 				if (typeof ifVersion == 'function')
 					callback = ifVersion;
@@ -802,7 +802,7 @@ export function addWriteMethods(LMDBStore, { env, fixedBuffer, resetReadTxn, use
 			}
 			let callbackDone, finishTxn;
 			this.transactions++;
-			if (env.isClosed)
+			if (!env.address)
 				throw new Error('The database has been closed and you can not transact on it');
 			env.beginTxn(flags == undefined ? 3 : flags);
 			let thisTxn = writeTxn = env.writeTxn = { write: true };
@@ -816,7 +816,7 @@ export function addWriteMethods(LMDBStore, { env, fixedBuffer, resetReadTxn, use
 						if (result === ABORT)
 							env.abortTxn();
 						else {
-							let hasWrites = env.commitTxn();
+							env.commitTxn();
 							resetReadTxn();
 						}
 						return result;
